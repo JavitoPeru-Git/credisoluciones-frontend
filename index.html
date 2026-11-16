@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CrediSoluciones - Asistente Agéntico Bancario</title>
-    <!-- Tailwind CSS para un diseño profesional -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col justify-between">
@@ -12,66 +11,96 @@
     <!-- Header -->
     <header class="bg-blue-900 text-white shadow-md py-4 px-6 flex justify-between items-center">
         <h1 class="text-xl font-bold tracking-wide">CrediSoluciones | Panel de Asesoría Agéntica</h1>
-        <span class="text-xs bg-blue-700 px-3 py-1 rounded-full">AWS Serverless + ML + LLM</span>
+        <div class="flex items-center gap-2">
+            <span id="memoryBadge" class="text-xs bg-emerald-600 px-3 py-1 rounded-full font-medium">Memoria: 0 turnos</span>
+            <span class="text-xs bg-blue-700 px-3 py-1 rounded-full">AWS Serverless + ML + LLM</span>
+        </div>
     </header>
 
     <!-- Main Container -->
-    <main class="max-w-4xl w-full mx-auto p-6 flex-grow grid grid-cols-1 md:grid-cols-3 gap-6">
+    <main class="max-w-5xl w-full mx-auto p-6 flex-grow grid grid-cols-1 md:grid-cols-3 gap-6">
         
         <!-- Panel Izquierdo: Control de Entrada -->
         <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
             <div>
-                <h2 class="text-lg font-semibold text-slate-800 mb-4">Consulta de Cliente</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold text-slate-800">Consulta de Cliente</h2>
+                    <button onclick="limpiarMemoria()" title="Reiniciar historial de conversación"
+                        class="text-xs text-slate-500 hover:text-red-600 underline">
+                        Limpiar Memoria
+                    </button>
+                </div>
                 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-slate-700 mb-1">DNI / Document ID:</label>
-                    <input type="text" id="documentId" value="45879612" 
+                    <input type="text" id="documentId" value="45879612" onchange="limpiarMemoria()"
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-[11px] text-slate-400 mt-1">Cambiar de DNI reinicia la memoria automáticamente.</p>
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Mensaje para el Agente:</label>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Mensaje / Seguimiento:</label>
                     <textarea id="userMessage" rows="3" 
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">Evalúa el riesgo del cliente y dame la recomendación comercial.</textarea>
                 </div>
+
+                <!-- Sugerencias rápidas de seguimiento -->
+                <div class="mb-4">
+                    <p class="text-xs font-medium text-slate-500 mb-1.5">Preguntas de prueba (Memoria):</p>
+                    <div class="flex flex-col gap-1.5">
+                        <button type="button" onclick="usarSugerencia('¿Qué tasa o beneficio exacto me sugeriste ofrecerle?')"
+                            class="text-left text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded transition">
+                            1. "¿Qué tasa o beneficio exacto me sugeriste?"
+                        </button>
+                        <button type="button" onclick="usarSugerencia('Redacta un guion corto de 3 líneas para llamarlo por teléfono.')"
+                            class="text-left text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded transition">
+                            2. "Redacta un guion corto para llamarlo."
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            <button onclick="consultarAgente()" 
+            <button onclick="consultarAgente()" id="sendBtn"
                 class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-all shadow-md">
-                Ejecutar Análisis Agéntico
+                Enviar al Agente
             </button>
         </div>
 
         <!-- Panel Derecho: Resultados e Integración -->
         <div class="md:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-            <h2 class="text-lg font-semibold text-slate-800 mb-4">Resultado del Análisis Integrado</h2>
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">Resultado del Análisis e Hilo Conversacional</h2>
             
-            <div id="loading" class="hidden text-center py-10 text-slate-500 animate-pulse">
-                Consultando AWS Lambda, DynamoDB y Motor Agéntico...
+            <div id="loading" class="hidden text-center py-4 text-sm text-blue-600 font-medium animate-pulse">
+                Consultando AWS Lambda, DynamoDB y Motor Agéntico con contexto...
             </div>
 
-            <div id="resultsPanel" class="space-y-4 flex-grow">
-                <!-- Datos del Cliente -->
-                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">1. Datos de DynamoDB</h3>
-                    <p class="text-sm font-medium text-slate-800">Cliente: <span id="resName" class="font-normal">-</span></p>
-                    <p class="text-sm font-medium text-slate-800">Saldo Actual: S/. <span id="resBalance" class="font-normal">-</span></p>
-                    <p class="text-sm font-medium text-slate-800">Score Crediticio: <span id="resCredit" class="font-normal">-</span></p>
-                </div>
+            <div id="resultsPanel" class="space-y-4 flex-grow flex flex-col">
+                <!-- Datos del Cliente y ML en fila -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">1. Datos de DynamoDB</h3>
+                        <p class="text-sm font-medium text-slate-800">Cliente: <span id="resName" class="font-normal">-</span></p>
+                        <p class="text-sm font-medium text-slate-800">Saldo Actual: S/. <span id="resBalance" class="font-normal">-</span></p>
+                        <p class="text-sm font-medium text-slate-800">Score: <span id="resCredit" class="font-normal">-</span></p>
+                    </div>
 
-                <!-- Análisis de Riesgo ML -->
-                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">2. Modelo de Riesgo (ML)</h3>
-                    <div class="flex gap-4">
-                        <span class="text-sm">Nivel de Riesgo: <span id="resRisk" class="font-bold px-2 py-0.5 rounded text-xs"> - </span></span>
-                        <span class="text-sm">Churn Score: <span id="resChurn" class="font-mono font-bold">-</span></span>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 flex flex-col justify-center">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">2. Modelo de Riesgo (ML)</h3>
+                        <div class="flex flex-col gap-1.5">
+                            <span class="text-sm">Nivel de Riesgo: <span id="resRisk" class="font-bold px-2 py-0.5 rounded text-xs"> - </span></span>
+                            <span class="text-sm">Churn Score: <span id="resChurn" class="font-mono font-bold">-</span></span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Respuesta del Agente LLM -->
-                <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 flex-grow">
-                    <h3 class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">3. Recomendación Comercial (Agente LLM)</h3>
-                    <p id="resAgent" class="text-sm text-slate-700 leading-relaxed italic">Esperando ejecución...</p>
+                <!-- Historial de Chat del Agente LLM -->
+                <div class="bg-blue-50/70 p-4 rounded-lg border border-blue-100 flex-grow flex flex-col">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xs font-bold text-blue-700 uppercase tracking-wider">3. Sesión Conversacional (Agente LLM + Memoria)</h3>
+                    </div>
+                    <div id="chatContainer" class="space-y-3 max-h-80 overflow-y-auto pr-1 text-sm">
+                        <p class="text-slate-500 italic">Ejecuta la primera consulta para iniciar la sesión con memoria...</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -82,35 +111,100 @@
         Cloud Computing Course - CrediSoluciones Agency Workflow (AWS us-east-1)
     </footer>
 
-    <!-- Script de Conexión con la API -->
+    <!-- Script de Conexión con Memoria Conversacional -->
     <script>
         const API_URL = "https://xnory8lp25.execute-api.us-east-1.amazonaws.com/chat";
+        
+        // Estado en memoria de la conversación actual
+        let chatHistory = [];
+        let activeDocumentId = document.getElementById('documentId').value.trim();
+
+        function actualizarBadgeMemoria() {
+            const turnos = Math.floor(chatHistory.length / 2);
+            document.getElementById('memoryBadge').innerText = `Memoria: ${turnos} ${turnos === 1 ? 'turno' : 'turnos'}`;
+        }
+
+        function limpiarMemoria() {
+            chatHistory = [];
+            activeDocumentId = document.getElementById('documentId').value.trim();
+            actualizarBadgeMemoria();
+            document.getElementById('chatContainer').innerHTML = 
+                '<p class="text-slate-500 italic">Memoria reiniciada. Listo para una nueva sesión...</p>';
+            document.getElementById('userMessage').value = 'Evalúa el riesgo del cliente y dame la recomendación comercial.';
+        }
+
+        function usarSugerencia(texto) {
+            document.getElementById('userMessage').value = texto;
+        }
+
+        function renderizarChat() {
+            const container = document.getElementById('chatContainer');
+            if (chatHistory.length === 0) return;
+
+            container.innerHTML = chatHistory.map(msg => {
+                if (msg.role === 'user') {
+                    return `
+                        <div class="flex justify-end">
+                            <div class="bg-blue-600 text-white px-3.5 py-2 rounded-2xl rounded-tr-sm max-w-[85%] shadow-sm">
+                                <span class="block text-[10px] text-blue-200 font-semibold mb-0.5">Asesor</span>
+                                ${msg.content}
+                            </div>
+                        </div>`;
+                } else {
+                    return `
+                        <div class="flex justify-start">
+                            <div class="bg-white text-slate-800 border border-blue-100 px-3.5 py-2.5 rounded-2xl rounded-tl-sm max-w-[90%] shadow-sm leading-relaxed">
+                                <span class="block text-[10px] text-blue-600 font-bold mb-0.5">Agente CrediSoluciones</span>
+                                ${msg.content}
+                            </div>
+                        </div>`;
+                }
+            }).join('');
+
+            container.scrollTop = container.scrollHeight;
+        }
 
         async function consultarAgente() {
-            const documentId = document.getElementById('documentId').value;
-            const message = document.getElementById('userMessage').value;
-            
+            const documentId = document.getElementById('documentId').value.trim();
+            const messageInput = document.getElementById('userMessage');
+            const message = messageInput.value.trim();
+
+            if (!documentId || !message) {
+                alert("Por favor ingresa un DNI y un mensaje.");
+                return;
+            }
+
+            // Si cambió el DNI sin disparar onchange, limpiar historial
+            if (documentId !== activeDocumentId) {
+                chatHistory = [];
+                activeDocumentId = documentId;
+            }
+
             const loading = document.getElementById('loading');
-            const resultsPanel = document.getElementById('resultsPanel');
+            const sendBtn = document.getElementById('sendBtn');
 
             loading.classList.remove('hidden');
-            resultsPanel.style.opacity = '0.4';
+            sendBtn.disabled = true;
+            sendBtn.classList.add('opacity-50');
 
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         document_id: documentId,
-                        message: message
+                        message: message,
+                        history: chatHistory // Enviamos el historial acumulado
                     })
                 });
 
                 const data = await response.json();
 
-                // Llenar datos en pantalla
+                if (!response.ok) {
+                    throw new Error(data.error || "Error en la respuesta del servidor");
+                }
+
+                // Actualizar tarjetas de DynamoDB y ML
                 document.getElementById('resName').innerText = data.customer.full_name;
                 document.getElementById('resBalance').innerText = data.customer.account_balance;
                 document.getElementById('resCredit').innerText = data.customer.credit_score;
@@ -118,16 +212,26 @@
                 document.getElementById('resRisk').innerText = data.ml_analysis.risk_level;
                 document.getElementById('resRisk').className = data.ml_analysis.risk_level === 'ALTO' 
                     ? 'font-bold px-2 py-0.5 rounded text-xs bg-red-100 text-red-700' 
-                    : 'font-bold px-2 py-0.5 rounded text-xs bg-green-100 text-green-700';
+                    : (data.ml_analysis.risk_level === 'MEDIO'
+                        ? 'font-bold px-2 py-0.5 rounded text-xs bg-amber-100 text-amber-700'
+                        : 'font-bold px-2 py-0.5 rounded text-xs bg-green-100 text-green-700');
                 
                 document.getElementById('resChurn').innerText = data.ml_analysis.churn_score;
-                document.getElementById('resAgent').innerText = data.agent_response;
+
+                // Guardar turno en la memoria conversacional
+                chatHistory.push({ role: 'user', content: message });
+                chatHistory.push({ role: 'assistant', content: data.agent_response });
+
+                actualizarBadgeMemoria();
+                renderizarChat();
+                messageInput.value = ''; // Limpiar caja para el siguiente turno
 
             } catch (error) {
-                alert("Error al conectar con la API Gateway: " + error);
+                alert("Error: " + error.message);
             } finally {
                 loading.classList.add('hidden');
-                resultsPanel.style.opacity = '1';
+                sendBtn.disabled = false;
+                sendBtn.classList.remove('opacity-50');
             }
         }
     </script>
